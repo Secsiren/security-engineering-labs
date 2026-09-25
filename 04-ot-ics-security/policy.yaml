@@ -1,0 +1,17 @@
+# Communication policy for the (mock) pumping-station control zone.
+# Derived from the conduit definitions in docs/iec62443-zones-conduits.md.
+plcs: ["10.20.2.20"]            # pump-station PLC (Level 1)
+
+hosts:                           # Level 2 supervisory hosts allowed through conduit C2
+  10.20.1.10: {name: HMI,         allowed_fcs: [1, 2, 3, 4, 5, 6]}   # operators start/stop pumps, set setpoints
+  10.20.1.20: {name: Historian,   allowed_fcs: [3, 4]}               # read-only
+  10.20.1.30: {name: EngWorkstation, allowed_fcs: [1, 2, 3, 4, 5, 6, 15, 16, 8, 43]}  # maintenance windows only
+
+# Engineering limits: holding-register address -> [min, max]
+safe_ranges:
+  0: [0, 1]          # pump 1 run command
+  1: [200, 850]      # tank level setpoint, cm
+  2: [5, 60]         # chlorine dosing rate, 0.1 mg/L
+  3: [0, 1450]       # pump speed, rpm
+
+exception_burst: [5, 10]         # 5 exception replies within 10 s from one host
