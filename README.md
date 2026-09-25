@@ -2,7 +2,7 @@
 
 Four hands-on security engineering projects by **Beatrice Mwangi** — each with working code, tests that prove the controls, and a written design. Together they cover the application, pipeline, cloud-native and OT sides of the field, and back up my certifications with runnable evidence.
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/security.yml/badge.svg)](../../actions)
+[![CI](https://github.com/Secsiren/security-engineering-labs/actions/workflows/security.yml/badge.svg)](../../actions)
 
 | # | Project | Skills / certifications it evidences | Highlights |
 |---|---|---|---|
