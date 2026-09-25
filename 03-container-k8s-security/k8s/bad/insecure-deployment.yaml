@@ -1,0 +1,32 @@
+# Deliberately insecure example — used only to test the checker. Never apply.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: legacy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legacy-app
+  namespace: legacy
+spec:
+  selector:
+    matchLabels: {app: legacy}
+  template:
+    metadata:
+      labels: {app: legacy}
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+        - name: app
+          image: nginx:latest
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true
+            capabilities: {add: ["NET_ADMIN", "SYS_ADMIN"]}
+          volumeMounts:
+            - {name: docker-sock, mountPath: /var/run/docker.sock}
+      volumes:
+        - name: docker-sock
+          hostPath: {path: /var/run/docker.sock}
