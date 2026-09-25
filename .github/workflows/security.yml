@@ -1,0 +1,88 @@
+name: security-labs-ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Unit & security-control tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Run all lab test suites
+        run: |
+          for d in 01-devsecops-supply-chain 02-threat-model-api-security \
+                   03-container-k8s-security 04-ot-ics-security; do
+            echo "::group::$d"; (cd "$d" && python -m pytest -q); echo "::endgroup::"
+          done
+
+  devsecops-gate:
+    name: DevSecOps scanners + security gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 01-devsecops-supply-chain
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r ../requirements.txt
+
+      - name: SAST (Bandit)
+        run: bandit -r app -f json -o bandit.json || true
+      - name: SCA (pip-audit)
+        run: pip-audit -r app-requirements.txt -f json -o pip-audit.json || true
+      - name: Secret scan (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+      - name: Build image
+        run: docker build -t inventory-service:ci .
+      - name: Image scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: inventory-service:ci
+          format: json
+          output: 01-devsecops-supply-chain/trivy.json
+          severity: HIGH,CRITICAL
+        continue-on-error: true
+      - name: SBOM (Syft)
+        uses: anchore/sbom-action@v0
+        with:
+          image: inventory-service:ci
+          output-file: sbom.spdx.json
+          format: spdx-json
+
+      - name: Security gate (policy decision)
+        run: |
+          python gate/security_gate.py --policy policy.yaml \
+            --bandit bandit.json --pip-audit pip-audit.json \
+            --trivy trivy.json
+
+  k8s-policy:
+    name: Kubernetes manifest policy check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 03-container-k8s-security
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+      - name: Hardened manifests must pass
+        run: python checker/k8s_guard.py k8s/good --fail-on HIGH
+      - name: Insecure manifests must fail (negative test)
+        run: |
+          if python checker/k8s_guard.py k8s/bad --fail-on HIGH; then
+            echo "checker failed to flag insecure manifests"; exit 1
+          else
+            echo "insecure manifests correctly rejected"
+          fi
