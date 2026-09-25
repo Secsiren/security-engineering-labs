@@ -1,0 +1,65 @@
+# Admission-time enforcement (Kyverno). The CI checker catches problems before
+# merge; these policies stop anything that bypasses CI from running in the cluster.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-privileged-and-root
+  annotations:
+    policies.kyverno.io/description: Block privileged containers, privilege escalation and root users.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: no-privileged
+      match: {any: [{resources: {kinds: [Pod]}}]}
+      validate:
+        message: "Privileged containers and privilege escalation are not allowed."
+        pattern:
+          spec:
+            containers:
+              - =(securityContext):
+                  =(privileged): "false"
+                  allowPrivilegeEscalation: "false"
+    - name: run-as-non-root
+      match: {any: [{resources: {kinds: [Pod]}}]}
+      validate:
+        message: "Containers must set runAsNonRoot: true."
+        anyPattern:
+          - spec: {securityContext: {runAsNonRoot: true}}
+          - spec: {containers: [{securityContext: {runAsNonRoot: true}}]}
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-pinned-images-and-limits
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: no-latest-tag
+      match: {any: [{resources: {kinds: [Pod]}}]}
+      validate:
+        message: "Images must be pinned (no ':latest' or missing tag)."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest & *:* | *@sha256:*"
+    - name: require-limits
+      match: {any: [{resources: {kinds: [Pod]}}]}
+      validate:
+        message: "CPU and memory limits are required."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"
+    - name: no-host-path
+      match: {any: [{resources: {kinds: [Pod]}}]}
+      validate:
+        message: "hostPath volumes are not allowed."
+        pattern:
+          spec:
+            =(volumes):
+              - X(hostPath): "null"
