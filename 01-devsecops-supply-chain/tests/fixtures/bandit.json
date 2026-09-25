@@ -1,0 +1,4 @@
+{"results": [
+ {"test_id": "B602", "test_name": "subprocess_popen_with_shell_equals_true", "issue_severity": "HIGH", "issue_confidence": "HIGH", "filename": "app/legacy.py", "line_number": 12},
+ {"test_id": "B101", "test_name": "assert_used", "issue_severity": "LOW", "issue_confidence": "HIGH", "filename": "app/util.py", "line_number": 3}
+]}

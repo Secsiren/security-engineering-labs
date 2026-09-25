@@ -1,0 +1,5 @@
+{"Results": [{"Target": "inventory-service (debian 12)", "Vulnerabilities": [
+ {"VulnerabilityID": "CVE-2099-0001", "PkgName": "openssl", "InstalledVersion": "3.0.1", "FixedVersion": "3.0.2", "Severity": "CRITICAL"},
+ {"VulnerabilityID": "CVE-2099-0002", "PkgName": "zlib", "InstalledVersion": "1.2.13", "FixedVersion": "", "Severity": "HIGH"},
+ {"VulnerabilityID": "CVE-2099-0003", "PkgName": "tar", "InstalledVersion": "1.34", "FixedVersion": "1.35", "Severity": "MEDIUM"}
+]}]}
