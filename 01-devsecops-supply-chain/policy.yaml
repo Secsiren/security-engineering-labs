@@ -1,0 +1,4 @@
+# Security gate policy — reviewed like code, applied on every pipeline run.
+fail_on_severity: HIGH      # block HIGH and CRITICAL findings
+ignore_unfixed: true        # base-image CVEs with no upstream fix are reported, not blocking
+allowlist: []               # accepted risks go here, one ID per line, with a ticket reference
